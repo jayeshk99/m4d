@@ -357,8 +357,15 @@ function Btn({
       border: `1px solid ${T.w15}`,
     },
   };
+
+  const handleClick = (e) => {
+    if (onClick) {
+      onClick(e);
+    }
+  };
+
   return (
-    <a href={href} onClick={onClick} style={styles[variant] || styles.gold}>
+    <a href={href} onClick={handleClick} style={styles[variant] || styles.gold}>
       {children}
     </a>
   );
@@ -893,7 +900,14 @@ function AudStats({ items }) {
   );
 }
 
-function Sidebar({ title, children, cta, ctaLabel = "Show Support", onCta }) {
+function Sidebar({
+  title,
+  children,
+  cta,
+  ctaLabel = "Show Support",
+  ctaHref,
+  onCta,
+}) {
   return (
     <div
       style={{
@@ -915,11 +929,16 @@ function Sidebar({ title, children, cta, ctaLabel = "Show Support", onCta }) {
         {title}
       </h4>
       {children}
-      {cta && (
-        <Btn small block onClick={onCta} style={{ marginTop: ".5rem" }}>
-          {ctaLabel}
-        </Btn>
-      )}
+      {cta &&
+        (ctaHref ? (
+          <Btn small block href={ctaHref} style={{ marginTop: ".5rem" }}>
+            {ctaLabel}
+          </Btn>
+        ) : (
+          <Btn small block onClick={onCta} style={{ marginTop: ".5rem" }}>
+            {ctaLabel}
+          </Btn>
+        ))}
     </div>
   );
 }
@@ -1171,7 +1190,7 @@ const audiences = [
       "M4D is a registered charity (HPC sub-type). All donations are tax deductible",
     ],
     ctaLabel: "Discuss a Partnership",
-    ctaHref: "mailto:info@medicare4dental.org?subject=Partnership%20Enquiry",
+    ctaHref: "mailto:info@medicare4dental.org?subject=Partnership Enquiry",
     sideTitle: "Where your investment goes",
     sideBody: [
       "M4D is a registered not-for-profit. Funds go directly toward research, policy development, and public advocacy. No political donations. No partisan activity.",
@@ -1211,7 +1230,7 @@ const audiences = [
       "M4D can provide briefings, research, and policy consultation to any party or MP",
     ],
     ctaLabel: "Request a Briefing",
-    ctaHref: "mailto:info@medicare4dental.org?subject=Briefing%20Request",
+    ctaHref: "mailto:info@medicare4dental.org?subject=Briefing Request",
     sideTitle: "The economics are clear",
     sideBody: [
       "Every dollar spent on preventive dental care saves multiples in avoided emergency hospital admissions, lost productivity, and downstream health complications.",
@@ -1295,22 +1314,13 @@ function AudienceTab({ data, goToCta }) {
                 {data.sideTitle}
               </h4>
               <DentalHealthChart />
-              {data.ctaLabel && (
-                <Btn
-                  small
-                  block
-                  onClick={goToCta}
-                  style={{ marginTop: "1.25rem" }}
-                >
-                  {data.ctaLabel}
-                </Btn>
-              )}
             </div>
           ) : (
             <Sidebar
               title={data.sideTitle}
               cta={!!data.ctaLabel}
               ctaLabel={data.ctaLabel}
+              ctaHref={data.ctaHref}
               onCta={goToCta}
             >
               {data.sideBody.map((t, i) => (
@@ -1338,7 +1348,7 @@ function AudienceTab({ data, goToCta }) {
             <Bullet key={i}>{p}</Bullet>
           ))}
         </ul>
-        {data.ctaLabel && (
+        {false && data.ctaLabel && (
           <div style={{ marginTop: "1.5rem" }}>
             {data.ctaHref ? (
               <a
@@ -3117,9 +3127,30 @@ function AboutPage({ goToCta, goToThankYou }) {
 // THANK YOU PAGE
 // ═══════════════════════════════════════════════
 
-function ThankYouPage({ navigate }) {
+function ThankYouPage({ navigate, variant = "subscribed" }) {
   const [selected, setSelected] = useState(10);
+  const [loading, setLoading] = useState(false);
   const reach = Math.round((selected / 10) * 1500).toLocaleString();
+  const showDonation = variant === "subscribed";
+
+  const handleDonate = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: selected }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setLoading(false);
+      }
+    } catch (err) {
+      setLoading(false);
+    }
+  };
   return (
     <>
       <section
@@ -3201,105 +3232,118 @@ function ThankYouPage({ navigate }) {
             this happen.
           </p>
 
-          {/* Divider */}
-          <div
-            style={{
-              width: 60,
-              height: 1,
-              background: T.w15,
-              margin: "0 auto 3rem",
-            }}
-          />
-
-          {/* Donate ask */}
-          <h2
-            style={{
-              fontFamily: T.fd,
-              fontSize: "clamp(1.5rem,3vw,2.2rem)",
-              fontWeight: 700,
-              lineHeight: 1.15,
-              marginBottom: ".75rem",
-            }}
-          >
-            Can you go one step further?
-          </h2>
-          <p
-            style={{
-              fontSize: "1.05rem",
-              color: T.w50,
-              lineHeight: 1.65,
-              marginBottom: "2rem",
-              maxWidth: 460,
-              margin: "0 auto 2rem",
-            }}
-          >
-            A small donation puts this message in front of thousands more
-            Australians. Every dollar is tax deductible.
-          </p>
-
-          <p style={{ fontSize: "1rem", color: T.w70, marginBottom: "1rem" }}>
-            <strong style={{ color: T.gold }}>${selected}</strong> reaches{" "}
-            <strong style={{ color: T.w }}>{reach} Australians</strong>
-          </p>
-
-          <div
-            style={{
-              display: "flex",
-              gap: ".5rem",
-              justifyContent: "center",
-              flexWrap: "wrap",
-              marginBottom: "1.5rem",
-            }}
-          >
-            {[10, 25, 50, 100].map((amt) => (
-              <button
-                key={amt}
-                onClick={() => setSelected(amt)}
+          {showDonation && (
+            <>
+              {/* Divider */}
+              <div
                 style={{
-                  padding: ".65rem 1.5rem",
-                  background: amt === selected ? T.gold : "transparent",
-                  color: amt === selected ? T.black : T.w,
-                  border: `1px solid ${amt === selected ? T.gold : T.w15}`,
-                  borderRadius: 100,
+                  width: 60,
+                  height: 1,
+                  background: T.w15,
+                  margin: "0 auto 3rem",
+                }}
+              />
+
+              {/* Donate ask */}
+              <h2
+                style={{
+                  fontFamily: T.fd,
+                  fontSize: "clamp(1.5rem,3vw,2.2rem)",
                   fontWeight: 700,
-                  fontSize: ".88rem",
-                  fontFamily: T.fb,
-                  cursor: "pointer",
-                  transition: "all .2s",
+                  lineHeight: 1.15,
+                  marginBottom: ".75rem",
                 }}
               >
-                ${amt}
+                Can you go one step further?
+              </h2>
+              <p
+                style={{
+                  fontSize: "1.05rem",
+                  color: T.w50,
+                  lineHeight: 1.65,
+                  marginBottom: "2rem",
+                  maxWidth: 460,
+                  margin: "0 auto 2rem",
+                }}
+              >
+                A small donation puts this message in front of thousands more
+                Australians. Every dollar is tax deductible.
+              </p>
+
+              <p
+                style={{ fontSize: "1rem", color: T.w70, marginBottom: "1rem" }}
+              >
+                <strong style={{ color: T.gold }}>${selected}</strong> reaches{" "}
+                <strong style={{ color: T.w }}>{reach} Australians</strong>
+              </p>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: ".5rem",
+                  justifyContent: "center",
+                  flexWrap: "wrap",
+                  marginBottom: "1.5rem",
+                }}
+              >
+                {[10, 25, 50, 100].map((amt) => (
+                  <button
+                    key={amt}
+                    onClick={() => setSelected(amt)}
+                    style={{
+                      padding: ".65rem 1.5rem",
+                      background: amt === selected ? T.gold : "transparent",
+                      color: amt === selected ? T.black : T.w,
+                      border: `1px solid ${amt === selected ? T.gold : T.w15}`,
+                      borderRadius: 100,
+                      fontWeight: 700,
+                      fontSize: ".88rem",
+                      fontFamily: T.fb,
+                      cursor: "pointer",
+                      transition: "all .2s",
+                    }}
+                  >
+                    ${amt}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={handleDonate}
+                disabled={loading}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: ".9rem 2.5rem",
+                  background: loading ? T.gd : T.gold,
+                  color: T.black,
+                  fontWeight: 700,
+                  fontSize: "1rem",
+                  borderRadius: 100,
+                  fontFamily: T.fb,
+                  border: "none",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  marginBottom: "1rem",
+                  opacity: loading ? 0.7 : 1,
+                  transition: "opacity .2s",
+                }}
+              >
+                {loading ? "Redirecting..." : `Donate $${selected} Now`}
               </button>
-            ))}
-          </div>
 
-          <a
-            href="#"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: ".9rem 2.5rem",
-              background: T.gold,
-              color: T.black,
-              fontWeight: 700,
-              fontSize: "1rem",
-              borderRadius: 100,
-              fontFamily: T.fb,
-              textDecoration: "none",
-              cursor: "pointer",
-              marginBottom: "1rem",
-            }}
-          >
-            Donate ${selected} Now
-          </a>
-
-          <p
-            style={{ fontSize: ".78rem", color: T.w30, marginBottom: "2.5rem" }}
-          >
-            All donations of $2 or more are tax deductible. M4D is a registered
-            DGR charity.
-          </p>
+              <p
+                style={{
+                  fontSize: ".78rem",
+                  color: T.w30,
+                  marginBottom: "2.5rem",
+                }}
+              >
+                All donations of $2 or more are tax deductible. M4D is a
+                registered DGR charity.
+              </p>
+            </>
+          )}
 
           {/* Back link */}
           <a
@@ -3325,7 +3369,38 @@ function ThankYouPage({ navigate }) {
 // $10 ≈ 800-1,000 impressions; accounting for frequency ~1.3x and organic sharing, ~1,500 unique reach per $10.
 function ChipInBar() {
   const [selected, setSelected] = useState(10);
-  const reach = Math.round((selected / 10) * 1500).toLocaleString();
+  const [custom, setCustom] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const amount = custom ? Number(custom) : selected;
+  const reach = Math.round((amount / 10) * 1500).toLocaleString();
+
+  const handleDonate = async () => {
+    setError("");
+    if (!amount || amount < 1) {
+      setError("Please enter at least $1.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Something went wrong.");
+        setLoading(false);
+        return;
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setError("Network error. Please try again.");
+      setLoading(false);
+    }
+  };
+
   return (
     <section
       style={{
@@ -3350,8 +3425,8 @@ function ChipInBar() {
             marginBottom: "1rem",
           }}
         >
-          Can you chip in <strong style={{ color: T.gold }}>${selected}</strong>
-          ? That puts this message in front of{" "}
+          Can you chip in <strong style={{ color: T.gold }}>${amount}</strong>?
+          That puts this message in front of{" "}
           <strong style={{ color: T.w }}>{reach} more Australians.</strong>
         </p>
         <div
@@ -3361,17 +3436,22 @@ function ChipInBar() {
             justifyContent: "center",
             flexWrap: "wrap",
             marginBottom: "1rem",
+            alignItems: "center",
           }}
         >
           {[10, 25, 50, 100].map((amt) => (
             <button
               key={amt}
-              onClick={() => setSelected(amt)}
+              onClick={() => {
+                setSelected(amt);
+                setCustom("");
+              }}
               style={{
                 padding: ".65rem 1.5rem",
-                background: amt === selected ? T.gold : "transparent",
-                color: amt === selected ? T.black : T.w,
-                border: `1px solid ${amt === selected ? T.gold : T.w15}`,
+                background:
+                  !custom && amt === selected ? T.gold : "transparent",
+                color: !custom && amt === selected ? T.black : T.w,
+                border: `1px solid ${!custom && amt === selected ? T.gold : T.w15}`,
                 borderRadius: 100,
                 fontWeight: 700,
                 fontSize: ".88rem",
@@ -3383,26 +3463,81 @@ function ChipInBar() {
               ${amt}
             </button>
           ))}
+          <div
+            style={{
+              position: "relative",
+              display: "inline-flex",
+              alignItems: "center",
+            }}
+          >
+            <span
+              style={{
+                position: "absolute",
+                left: 12,
+                color: custom ? T.w : T.w30,
+                fontWeight: 700,
+                fontSize: ".88rem",
+                pointerEvents: "none",
+              }}
+            >
+              $
+            </span>
+            <input
+              type="number"
+              min="1"
+              placeholder="Other"
+              value={custom}
+              onChange={(e) => setCustom(e.target.value)}
+              style={{
+                width: 90,
+                padding: ".65rem .65rem .65rem 1.5rem",
+                background: custom ? T.gg : "transparent",
+                border: `1px solid ${custom ? T.gold : T.w15}`,
+                borderRadius: 100,
+                color: T.w,
+                fontWeight: 700,
+                fontSize: ".88rem",
+                fontFamily: T.fb,
+                outline: "none",
+                textAlign: "center",
+              }}
+            />
+          </div>
         </div>
-        <a
-          href="#"
+        {error && (
+          <div
+            style={{
+              color: "#ff6b6b",
+              fontSize: ".8rem",
+              marginBottom: ".5rem",
+              fontFamily: T.fb,
+            }}
+          >
+            {error}
+          </div>
+        )}
+        <button
+          onClick={handleDonate}
+          disabled={loading}
           style={{
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
             padding: ".85rem 2.5rem",
-            background: T.gold,
+            background: loading ? T.gd : T.gold,
             color: T.black,
             fontWeight: 700,
             fontSize: ".95rem",
             borderRadius: 100,
             fontFamily: T.fb,
-            textDecoration: "none",
-            cursor: "pointer",
+            border: "none",
+            cursor: loading ? "not-allowed" : "pointer",
+            opacity: loading ? 0.7 : 1,
+            transition: "opacity .2s",
           }}
         >
-          Donate ${selected} Now
-        </a>
+          {loading ? "Redirecting..." : `Donate $${amount} Now`}
+        </button>
         <p style={{ fontSize: ".72rem", color: T.w15, marginTop: "1rem" }}>
           M4D is a registered Australian not-for-profit.
         </p>
@@ -3418,6 +3553,23 @@ export default function App() {
   const [page, setPage] = useState("home");
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [thankYouVariant, setThankYouVariant] = useState("subscribed");
+  const [ready, setReady] = useState(false);
+
+  // Detect URL params on mount — runs before first visible paint
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("donated") === "true") {
+      setThankYouVariant("donated");
+      setPage("thankyou");
+      window.history.replaceState({}, "", window.location.pathname);
+    } else if (params.get("subscribed") === "true") {
+      setThankYouVariant("subscribed");
+      setPage("thankyou");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    setReady(true);
+  }, []);
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 40);
@@ -3432,6 +3584,7 @@ export default function App() {
   }, []);
   const goToThankYou = useCallback(() => {
     window.scrollTo({ top: 0 });
+    setThankYouVariant("subscribed");
     setPage("thankyou");
   }, []);
 
@@ -3462,6 +3615,9 @@ export default function App() {
     { id: "about", label: "About Us" },
     { id: "scheme", label: "The Scheme" },
   ];
+
+  if (!ready)
+    return <div style={{ background: T.black, minHeight: "100vh" }} />;
 
   return (
     <div
@@ -3681,7 +3837,9 @@ export default function App() {
         />
       )}
       {page === "scheme" && <SchemePage goToThankYou={goToThankYou} />}
-      {page === "thankyou" && <ThankYouPage navigate={navigate} />}
+      {page === "thankyou" && (
+        <ThankYouPage navigate={navigate} variant={thankYouVariant} />
+      )}
 
       {/* CHIP-IN BAR */}
       {page !== "thankyou" && <ChipInBar />}

@@ -6,7 +6,8 @@
       "mcp__Claude_Preview__preview_start",
       "WebSearch",
       "WebFetch(domain:developers.mailerlite.com)",
-      "Bash(find C:/Users/ACER/cotreat/m4d/node_modules/next/dist/docs/ -name *route* -o -name *api*)"
+      "Bash(find C:/Users/ACER/cotreat/m4d/node_modules/next/dist/docs/ -name *route* -o -name *api*)",
+      "Bash(npm install:*)"
     ]
   }
 }
