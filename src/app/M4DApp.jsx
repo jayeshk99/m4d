@@ -360,6 +360,7 @@ function Btn({
 
   const handleClick = (e) => {
     if (onClick) {
+      e.preventDefault();
       onClick(e);
     }
   };
