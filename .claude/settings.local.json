@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack --yes)",
       "Bash(npx next:*)",
-      "mcp__Claude_Preview__preview_start"
+      "mcp__Claude_Preview__preview_start",
+      "WebSearch",
+      "WebFetch(domain:developers.mailerlite.com)",
+      "Bash(find C:/Users/ACER/cotreat/m4d/node_modules/next/dist/docs/ -name *route* -o -name *api*)"
     ]
   }
 }
