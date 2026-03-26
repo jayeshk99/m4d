@@ -373,7 +373,8 @@ function Btn({
 }
 
 function SupportForm({ maxW = 480, compact, onSubmit }) {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
   const [loading, setLoading] = useState(false);
@@ -381,8 +382,8 @@ function SupportForm({ maxW = 480, compact, onSubmit }) {
 
   const handleSubmit = async () => {
     setError("");
-    if (!name.trim() || !email.trim() || !role) {
-      setError("Please fill in your name, email, and select who you are.");
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !role) {
+      setError("Please fill in all fields and select who you are.");
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -394,7 +395,7 @@ function SupportForm({ maxW = 480, compact, onSubmit }) {
       const res = await fetch("/api/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), email: email.trim(), role }),
+        body: JSON.stringify({ firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(), role }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -430,18 +431,25 @@ function SupportForm({ maxW = 480, compact, onSubmit }) {
         <input
           type="text"
           placeholder="First name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={firstName}
+          onChange={(e) => setFirstName(e.target.value)}
           style={inputStyle}
         />
         <input
-          type="email"
-          placeholder="Email address"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={{ ...inputStyle, flex: 1.5 }}
+          type="text"
+          placeholder="Last name"
+          value={lastName}
+          onChange={(e) => setLastName(e.target.value)}
+          style={inputStyle}
         />
       </div>
+      <input
+        type="email"
+        placeholder="Email address"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        style={{ ...inputStyle, width: "100%", marginBottom: ".5rem" }}
+      />
       <select
         value={role}
         onChange={(e) => setRole(e.target.value)}

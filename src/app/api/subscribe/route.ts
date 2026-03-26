@@ -2,12 +2,12 @@ import { NextRequest } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, name, role } = await request.json();
+    const { email, firstName, lastName, role } = await request.json();
 
     // Validate
-    if (!email || !name) {
+    if (!email || !firstName || !lastName) {
       return Response.json(
-        { error: "Name and email are required" },
+        { error: "First name, last name, and email are required" },
         { status: 400 }
       );
     }
@@ -48,7 +48,8 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           email,
           fields: {
-            name,
+            name: firstName,
+            last_name: lastName,
           },
           groups,
           status: "active",
