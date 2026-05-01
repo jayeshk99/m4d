@@ -29,8 +29,33 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Production Deployment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Server Deployment (Docker + Nginx)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This application is configured for deployment on Linux servers using Docker.
+
+**For Server Administrators:**
+- 📚 **[Complete Setup Guide](SERVER_SETUP.md)** - Detailed step-by-step instructions
+- ✅ **[Quick Setup Checklist](SETUP_CHECKLIST.md)** - Fast reference for experienced admins
+- 📖 **[Deployment Documentation](DEPLOYMENT.md)** - Docker and management commands
+
+**Quick Start:**
+```bash
+# Clone repository
+git clone https://github.com/jayeshk99/m4d.git
+cd m4d
+
+# Configure environment
+cp .env.production.example .env.production
+nano .env.production  # Add your Stripe keys
+
+# Deploy with Docker
+docker compose up -d --build
+```
+
+### Deploy on Vercel
+
+Alternatively, you can deploy on [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme).
+
+Check out the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
